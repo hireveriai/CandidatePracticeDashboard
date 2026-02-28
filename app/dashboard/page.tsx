@@ -3,6 +3,9 @@ import Header from "@/components/dashboard/Header";
 import WelcomeCard from "@/components/dashboard/WelcomeCard";
 import PracticeCard from "@/components/dashboard/PracticeCard";
 import PerformanceSnapshot from "@/components/dashboard/PerformanceSnapshot";
+import PerformanceTrend from "@/components/dashboard/PerformanceTrend";
+import MilestoneBadges from "@/components/dashboard/MilestoneBadges";
+import VerisInsightCard from "@/components/veris/VerisInsightCard";
 
 export default function Dashboard() {
   return (
@@ -11,7 +14,7 @@ export default function Dashboard() {
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
 
-      {/* soft glow accents */}
+      {/* Glow accents */}
       <div className="absolute top-[-200px] left-[-200px] w-[500px] h-[500px] bg-cyan-500/10 blur-[160px] rounded-full" />
       <div className="absolute bottom-[-200px] right-[-200px] w-[500px] h-[500px] bg-blue-500/10 blur-[160px] rounded-full" />
 
@@ -23,6 +26,9 @@ export default function Dashboard() {
           <WelcomeCard />
           <PracticeCard />
           <PerformanceSnapshot />
+          <PerformanceTrend scores={[7.1, 7.4, 7.8, 8.2]} />
+          <MilestoneBadges />
+          <VerisInsightCard />
         </main>
       </div>
     </div>
