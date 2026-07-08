@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const insights = [
   "Clear pauses before answering improve clarity.",
@@ -11,13 +11,9 @@ const insights = [
 ];
 
 export default function VerisInsightCard() {
-  const [insight, setInsight] = useState("");
-
-  useEffect(() => {
-    const random =
-      insights[Math.floor(Math.random() * insights.length)];
-    setInsight(random);
-  }, []);
+  const [insight] = useState(
+    () => insights[Math.floor(Math.random() * insights.length)]
+  );
 
   return (
     <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-400/20 rounded-2xl p-6 space-y-2 transition hover:-translate-y-1">

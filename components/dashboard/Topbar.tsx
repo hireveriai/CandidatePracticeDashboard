@@ -12,7 +12,7 @@ export default function Topbar() {
             Welcome back
           </h2>
           <p className="text-xs text-slate-400">
-            You're in a calm, focused space
+            You&apos;re in a calm, focused space
           </p>
         </div>
 
