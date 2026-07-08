@@ -7,7 +7,13 @@ import { Bell, Menu, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { navItems } from "./data";
 
-export default function PracticeShell({ children }: { children: React.ReactNode }) {
+export default function PracticeShell({
+  children,
+  candidateName = "Candidate",
+}: {
+  children: React.ReactNode;
+  candidateName?: string;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -80,8 +86,8 @@ export default function PracticeShell({ children }: { children: React.ReactNode 
                 <Menu size={19} />
               </button>
               <div>
-                <p className="text-sm font-semibold text-slate-950">Welcome back, Jatin</p>
-                <p className="text-xs text-slate-500">Your next answer can be sharper than your last.</p>
+                <p className="text-sm font-semibold text-slate-950">Welcome back, {candidateName}</p>
+                <p className="text-xs text-slate-500">Your practice data is loaded from HireVeri records.</p>
               </div>
             </div>
 

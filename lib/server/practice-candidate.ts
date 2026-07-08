@@ -29,6 +29,22 @@ type SchemaSupport = {
   fn_validate_interview_token: boolean;
 };
 
+const EMPTY_SCHEMA_SUPPORT: SchemaSupport = {
+  candidates: false,
+  organizations: false,
+  job_positions: false,
+  interviews: false,
+  interview_invites: false,
+  interview_configs: false,
+  evaluation_template_pool: false,
+  identity_users: false,
+  candidate_identity_links: false,
+  sp_create_practice_candidate: false,
+  fn_create_job: false,
+  fn_create_interview_link: false,
+  fn_validate_interview_token: false,
+};
+
 type PracticeCandidateRow = {
   user_id: string;
   organization_id: string;
@@ -43,6 +59,31 @@ type InterviewLinkRow = {
   interview_id: string;
   token: string;
   link: string;
+};
+
+export type PracticeDashboardInterview = {
+  interviewId: string;
+  jobId: string | null;
+  jobTitle: string | null;
+  status: string | null;
+  interviewType: string | null;
+  createdAt: string | null;
+  durationMinutes: number | null;
+  token: string | null;
+  expiresAt: string | null;
+};
+
+export type PracticeDashboardData = {
+  schema: SchemaSupport;
+  candidate: {
+    candidateId: string;
+    fullName: string | null;
+    email: string | null;
+    createdAt: string | null;
+    organizationId: string | null;
+    organizationName: string | null;
+  } | null;
+  interviews: PracticeDashboardInterview[];
 };
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -413,10 +454,18 @@ export async function createPracticeInterview(input: PracticeInterviewInput) {
   };
 }
 
-export async function getPracticeDashboard(identityId?: string) {
+export async function getPracticeDashboard(identityId?: string): Promise<PracticeDashboardData> {
+  if (!identityId || !UUID_PATTERN.test(identityId)) {
+    return {
+      schema: EMPTY_SCHEMA_SUPPORT,
+      candidate: null,
+      interviews: [],
+    };
+  }
+
   const support = await getSchemaSupport();
 
-  if (!identityId || !UUID_PATTERN.test(identityId) || !support.candidate_identity_links) {
+  if (!support.candidate_identity_links) {
     return {
       schema: support,
       candidate: null,
@@ -431,10 +480,13 @@ export async function getPracticeDashboard(identityId?: string) {
         c.full_name as "fullName",
         c.email,
         c.created_at::text as "createdAt",
+        c.organization_id::text as "organizationId",
+        o.organization_name as "organizationName",
         coalesce(jsonb_agg(
           jsonb_build_object(
             'interviewId', i.interview_id::text,
             'jobId', i.job_id::text,
+            'jobTitle', jp.job_title,
             'status', i.status,
             'interviewType', i.interview_type,
             'createdAt', i.created_at,
@@ -446,10 +498,13 @@ export async function getPracticeDashboard(identityId?: string) {
         ) filter (where i.interview_id is not null), '[]'::jsonb) as interviews
       from public.candidate_identity_links cil
       join public.candidates c on c.candidate_id = cil.candidate_id
+      left join public.organizations o on o.organization_id = c.organization_id
       left join public.interviews i on i.candidate_id = c.candidate_id
+      left join public.job_positions jp on jp.job_id = i.job_id
       left join public.interview_invites ii on ii.interview_id = i.interview_id
       where cil.identity_id = $1::uuid
-      group by c.candidate_id, c.full_name, c.email, c.created_at
+        and cil.purpose = 'practice'
+      group by c.candidate_id, c.full_name, c.email, c.created_at, c.organization_id, o.organization_name
       order by c.created_at desc
       limit 1
     `,
@@ -457,7 +512,15 @@ export async function getPracticeDashboard(identityId?: string) {
   );
 
   const candidate = rows[0] as
-    | { candidateId: string; fullName: string; email: string; createdAt: string; interviews: unknown[] }
+    | {
+        candidateId: string;
+        fullName: string | null;
+        email: string | null;
+        createdAt: string | null;
+        organizationId: string | null;
+        organizationName: string | null;
+        interviews: PracticeDashboardInterview[];
+      }
     | undefined;
 
   return {
@@ -468,6 +531,8 @@ export async function getPracticeDashboard(identityId?: string) {
           fullName: candidate.fullName,
           email: candidate.email,
           createdAt: candidate.createdAt,
+          organizationId: candidate.organizationId,
+          organizationName: candidate.organizationName,
         }
       : null,
     interviews: candidate?.interviews ?? [],
