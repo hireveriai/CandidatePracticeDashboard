@@ -7,8 +7,10 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { PracticeDashboardData } from "@/lib/server/practice-candidate";
+import type { PracticePricingData } from "@/lib/server/practice-pricing";
 import PageHeader from "@/components/practice/PageHeader";
 import PracticeShell from "@/components/practice/PracticeShell";
+import PracticePricing from "@/components/practice/PracticePricing";
 import StatCard from "@/components/practice/StatCard";
 
 function formatDate(value: string | null) {
@@ -36,8 +38,10 @@ function getDisplayName(fullName: string | null) {
 
 export default function PracticeDashboard({
   data,
+  pricing,
 }: {
   data: PracticeDashboardData;
+  pricing: PracticePricingData;
 }) {
   const candidateName = getDisplayName(data.candidate?.fullName ?? null);
   const interviews = data.interviews;
@@ -110,8 +114,14 @@ export default function PracticeDashboard({
         <StatCard label="Total interviews" value={String(interviews.length)} detail="from organization data" />
         <StatCard label="Completed interviews" value={String(completedCount)} detail="from interview status" />
         <StatCard label="Practice roles" value={String(activeJobs)} detail="linked job positions" />
-        <StatCard label="Candidate profile" value={data.candidate ? "Ready" : "Missing"} detail="from onboarding data" />
+        <StatCard
+          label="Practice credits"
+          value={String(pricing.subscription?.remainingCredits ?? 0)}
+          detail={pricing.subscription ? "paid subscription credits" : "no active plan"}
+        />
       </section>
+
+      <PracticePricing pricing={pricing} />
 
       <section className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">

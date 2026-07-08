@@ -32,7 +32,7 @@ function getPracticeIdentityId() {
 export default function StartInterviewForm() {
   const router = useRouter();
   const [state, setState] = useState<FormState>({
-    role: setupOptions.roles[0],
+    role: "",
     experience: setupOptions.experience[1],
     difficulty: setupOptions.difficulty[1],
     interviewType: setupOptions.types[3],
@@ -54,6 +54,12 @@ export default function StartInterviewForm() {
   );
 
   async function startInterview() {
+    const role = state.role.trim();
+    if (!role) {
+      setError("Enter the role you want to practice for.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -66,6 +72,7 @@ export default function StartInterviewForm() {
         body: JSON.stringify({
           identityId: getPracticeIdentityId(),
           ...state,
+          role,
         }),
       });
       const payload = await response.json();
@@ -94,7 +101,12 @@ export default function StartInterviewForm() {
     <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
       <form className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm" onSubmit={(event) => event.preventDefault()}>
         <div className="grid gap-5 md:grid-cols-2">
-          <SelectField label="Role" value={state.role} values={setupOptions.roles} onChange={(role) => setState((current) => ({ ...current, role }))} />
+          <TextField
+            label="Role"
+            value={state.role}
+            placeholder="e.g. Senior Java Developer, DBA, Product Manager"
+            onChange={(role) => setState((current) => ({ ...current, role }))}
+          />
           <SelectField label="Experience" value={state.experience} values={setupOptions.experience} onChange={(experience) => setState((current) => ({ ...current, experience }))} />
           <SelectField label="Difficulty" value={state.difficulty} values={setupOptions.difficulty} onChange={(difficulty) => setState((current) => ({ ...current, difficulty }))} />
           <SelectField label="Interview type" value={state.interviewType} values={setupOptions.types} onChange={(interviewType) => setState((current) => ({ ...current, interviewType }))} />
@@ -186,6 +198,35 @@ function SelectField({
           <option key={option}>{option}</option>
         ))}
       </select>
+    </label>
+  );
+}
+
+function TextField({
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-sm font-semibold text-slate-700">{label}</span>
+      <input
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        maxLength={120}
+        onChange={(event) => onChange(event.target.value)}
+        className="min-h-11 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+      />
+      <span className="text-xs leading-5 text-slate-500">
+        Type any target role. VERIS will use this role to shape the practice interview.
+      </span>
     </label>
   );
 }

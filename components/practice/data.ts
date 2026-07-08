@@ -91,7 +91,6 @@ export const resumeItems = [
 ];
 
 export const setupOptions = {
-  roles: ["Product Manager", "Frontend Engineer", "Data Analyst", "Customer Success Lead"],
   experience: ["Entry level", "Mid level", "Senior", "Leadership"],
   difficulty: ["Warm-up", "Standard", "Challenging"],
   types: ["Behavioral", "Technical", "Case study", "Mixed"],
