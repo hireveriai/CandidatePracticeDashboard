@@ -20,7 +20,7 @@ export default async function InterviewPrecheck({
       <PageHeader
         eyebrow="Interview readiness"
         title="Check your setup before Veris begins"
-        description="This mirrors the recruiter interview pre-check experience and keeps the practice flow ready for the existing interview engine handoff."
+        description="Confirm your setup, understand what to expect, and begin when you are comfortable and ready."
       />
 
       <section className="grid gap-5 lg:grid-cols-[1fr_380px]">
@@ -47,12 +47,14 @@ export default async function InterviewPrecheck({
           <h2 className="text-lg font-semibold text-slate-950">Instructions</h2>
           <div className="mt-4 grid gap-3 text-sm leading-6 text-slate-600">
             <p>Keep your face centered and use a quiet environment.</p>
-            <p>Answer naturally. Veris evaluates clarity, structure, confidence, and role fit.</p>
-            <p>For coding sessions, the existing coding interview flow opens when the interview requires it.</p>
+            <p>Answer naturally. Veris evaluates the content and structure of your responses and may ask relevant follow-up questions.</p>
+            <p>If you lose connection, return using the same interview link to continue when recovery is available.</p>
           </div>
           <div className="mt-5 flex gap-3 rounded-lg bg-indigo-50 p-4 text-sm text-indigo-900">
             <Info size={18} aria-hidden="true" className="mt-0.5 shrink-0" />
-            <span>Placeholder readiness states are frontend-only and integration-ready for production checks.</span>
+            <span>
+              Your session may use camera, microphone, recording, transcript, and session-event data to prepare interview feedback. AI provides decision support; a person remains responsible for any hiring decision.
+            </span>
           </div>
           <PrecheckReadyAction
             link={params.link}

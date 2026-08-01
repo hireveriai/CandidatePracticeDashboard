@@ -6,6 +6,7 @@ export type PracticePlan = {
   name: string;
   description: string;
   price: number;
+  currency: "INR" | "USD";
   interviewLimit: number;
   features: string[];
   order: number;
@@ -42,6 +43,7 @@ function mapPlan(row: {
   interviewLimit: number | string;
   features: unknown;
   order: number | string;
+  currency: "INR" | "USD";
 }): PracticePlan {
   return {
     id: row.id,
@@ -49,13 +51,14 @@ function mapPlan(row: {
     name: row.name,
     description: row.description ?? "",
     price: Number(row.price ?? 0),
+    currency: row.currency,
     interviewLimit: Number(row.interviewLimit ?? 0),
     features: normalizeFeatures(row.features),
     order: Number(row.order ?? 0),
   };
 }
 
-export async function getPracticePlans() {
+export async function getPracticePlans(currency: "INR" | "USD" = "INR") {
   const { rows } = await query<{
     id: string;
     slug: string;
@@ -65,22 +68,25 @@ export async function getPracticePlans() {
     interviewLimit: number | string;
     features: unknown;
     order: number | string;
+    currency: "INR" | "USD";
   }>(
     `
       select
-        "id",
-        "slug",
-        "name",
-        "description",
-        "price",
-        "interviewLimit",
-        "features",
-        "order"
-      from public.hireveri_plans
-      where "isActive" = true
-        and "planType" = 'PRACTICE_CANDIDATE'
-      order by "order" asc
-    `
+        p."id",
+        p."slug",
+        p."name",
+        p."description",
+        (case when $1 = 'USD' then p.price_usd else p.price_inr end)::int as "price",
+        $1::text as "currency",
+        p."interviewLimit",
+        p."features",
+        p."order"
+      from public.hireveri_plans p
+      where p."isActive" = true
+        and p."planType" = 'PRACTICE_CANDIDATE'
+      order by p."order" asc
+    `,
+    [currency]
   );
 
   return rows.map(mapPlan);
@@ -142,10 +148,10 @@ export async function getPracticeSubscription(identityId?: string | null) {
   };
 }
 
-export async function getPracticePricing(identityId?: string | null): Promise<PracticePricingData> {
+export async function getPracticePricing(identityId?: string | null, currency: "INR" | "USD" = "INR"): Promise<PracticePricingData> {
   try {
     const [plans, subscription] = await Promise.all([
-      getPracticePlans(),
+      getPracticePlans(currency),
       getPracticeSubscription(identityId),
     ]);
 

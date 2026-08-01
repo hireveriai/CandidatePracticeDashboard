@@ -2,10 +2,10 @@ import Link from "next/link";
 import { ArrowRight, CreditCard } from "lucide-react";
 import type { PracticePricingData, PracticePlan } from "@/lib/server/practice-pricing";
 
-function formatINR(value: number) {
-  return new Intl.NumberFormat("en-IN", {
+function formatPrice(value: number, currency: string) {
+  return new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
     style: "currency",
-    currency: "INR",
+    currency,
     maximumFractionDigits: 0,
   }).format(value);
 }
@@ -72,7 +72,7 @@ export default function PracticePricing({ pricing }: { pricing: PracticePricingD
                 ) : null}
               </div>
 
-              <p className="mt-5 text-3xl font-semibold text-slate-950">{formatINR(plan.price)}</p>
+              <p className="mt-5 text-3xl font-semibold text-slate-950">{formatPrice(plan.price, plan.currency)}</p>
               <p className="mt-1 text-sm font-semibold text-blue-700">
                 {plan.interviewLimit} practice {plan.interviewLimit === 1 ? "interview" : "interviews"}
               </p>
