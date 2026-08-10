@@ -5,6 +5,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "HireVeri Candidate",
   description: "Calm Interview Experience",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 const GA_MEASUREMENT_ID = "G-N6GNKTH5LY";
