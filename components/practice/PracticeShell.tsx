@@ -47,8 +47,10 @@ export default function PracticeShell({
   return (
     <div className="min-h-screen bg-[#f7faff] text-slate-950">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-slate-200 bg-white px-5 py-5 lg:block">
-        <Link href="/" className="flex items-center gap-3" aria-label="HireVeri home">
-          <Image src="/hireveri_logo.png" alt="HireVeri" width={130} height={36} className="h-8 w-auto" />
+        <Link href="/" className="flex items-center gap-3" aria-label="VerisNova home">
+          {/* Square asset (500x500) - the width/height must match its ratio or
+              Next mis-sizes it; h-8 w-auto controls the rendered size. */}
+          <Image src="/verisnova_logo_on_white.png" alt="VerisNova" width={64} height={64} className="h-8 w-auto" />
         </Link>
         <p className="mt-2 text-sm text-slate-500">Practice Candidate</p>
         <div className="mt-8">{nav}</div>
@@ -58,7 +60,7 @@ export default function PracticeShell({
         <div className="fixed inset-0 z-50 bg-slate-950/30 lg:hidden" role="dialog" aria-modal="true">
           <div className="h-full w-80 max-w-[88vw] border-r border-slate-200 bg-white p-5 shadow-xl">
             <div className="flex items-center justify-between">
-              <Image src="/hireveri_logo.png" alt="HireVeri" width={124} height={34} className="h-8 w-auto" />
+              <Image src="/verisnova_logo_on_white.png" alt="VerisNova" width={64} height={64} className="h-8 w-auto" />
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -87,7 +89,7 @@ export default function PracticeShell({
               </button>
               <div>
                 <p className="text-sm font-semibold text-slate-950">Welcome back, {candidateName}</p>
-                <p className="text-xs text-slate-500">Your practice data is loaded from HireVeri records.</p>
+                <p className="text-xs text-slate-500">Your practice data is loaded from VerisNova records.</p>
               </div>
             </div>
 
