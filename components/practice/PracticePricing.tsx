@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, CreditCard } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, ChevronDown, CreditCard } from "lucide-react";
 import type { PracticePricingData, PracticePlan } from "@/lib/server/practice-pricing";
+
+const VISIBLE_FEATURE_COUNT = 4;
 
 function formatPrice(value: number, currency: string) {
   return new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
@@ -21,11 +26,72 @@ function getCheckoutHref(plan: PracticePlan) {
   return url.toString();
 }
 
+function PlanCard({ plan, popular }: { plan: PracticePlan; popular: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+  const features = plan.features.slice(0, 6);
+  const visibleFeatures = expanded ? features : features.slice(0, VISIBLE_FEATURE_COUNT);
+  const hiddenCount = features.length - VISIBLE_FEATURE_COUNT;
+
+  return (
+    <article
+      className={`flex h-full flex-col rounded-xl border p-5 transition hover:-translate-y-0.5 ${
+        popular ? "border-blue-300 bg-blue-50 shadow-sm" : "border-slate-200 bg-white"
+      }`}
+    >
+      <div className="flex min-h-[184px] items-start justify-between gap-3">
+        <div>
+          <p className="text-lg font-semibold text-slate-950">{plan.name}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{plan.description}</p>
+        </div>
+        {popular ? (
+          <span className="shrink-0 rounded-md bg-blue-600 px-2 py-1 text-xs font-semibold text-white">
+            Popular
+          </span>
+        ) : null}
+      </div>
+
+      <p className="mt-5 text-3xl font-semibold text-slate-950">{formatPrice(plan.price, plan.currency)}</p>
+      <p className="mt-1 text-sm font-semibold text-blue-700">
+        {plan.interviewLimit} practice {plan.interviewLimit === 1 ? "interview" : "interviews"}
+      </p>
+
+      <div className="mt-5 flex-1 space-y-2 text-sm text-slate-600">
+        {visibleFeatures.map((feature) => (
+          <div key={feature} className="flex gap-2">
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+            <span>{feature}</span>
+          </div>
+        ))}
+        {hiddenCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            className="flex items-center gap-1 text-sm font-semibold text-blue-700 hover:text-blue-800"
+            aria-expanded={expanded}
+          >
+            {expanded ? "Show less" : `Show ${hiddenCount} more`}
+            <ChevronDown size={14} className={`transition ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
+          </button>
+        ) : null}
+      </div>
+
+      <Link
+        href={getCheckoutHref(plan)}
+        className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+      >
+        <CreditCard size={16} aria-hidden="true" />
+        Choose plan
+        <ArrowRight size={16} aria-hidden="true" />
+      </Link>
+    </article>
+  );
+}
+
 export default function PracticePricing({ pricing }: { pricing: PracticePricingData }) {
   const subscription = pricing.subscription;
 
   return (
-    <section className="mt-5 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="mt-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700">Practice pricing</p>
@@ -52,49 +118,7 @@ export default function PracticePricing({ pricing }: { pricing: PracticePricingD
       {pricing.plans.length ? (
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {pricing.plans.map((plan, index) => (
-            <article
-              key={plan.id}
-              className={`flex h-full flex-col rounded-lg border p-5 transition hover:-translate-y-0.5 ${
-                index === 1
-                  ? "border-blue-300 bg-blue-50 shadow-sm"
-                  : "border-slate-200 bg-white"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-lg font-semibold text-slate-950">{plan.name}</p>
-                  <p className="mt-2 min-h-16 text-sm leading-6 text-slate-600">{plan.description}</p>
-                </div>
-                {index === 1 ? (
-                  <span className="rounded-md bg-blue-600 px-2 py-1 text-xs font-semibold text-white">
-                    Popular
-                  </span>
-                ) : null}
-              </div>
-
-              <p className="mt-5 text-3xl font-semibold text-slate-950">{formatPrice(plan.price, plan.currency)}</p>
-              <p className="mt-1 text-sm font-semibold text-blue-700">
-                {plan.interviewLimit} practice {plan.interviewLimit === 1 ? "interview" : "interviews"}
-              </p>
-
-              <div className="mt-5 flex-1 space-y-2 text-sm text-slate-600">
-                {plan.features.slice(0, 6).map((feature) => (
-                  <div key={feature} className="flex gap-2">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
-                    <span>{feature}</span>
-                  </div>
-                ))}
-              </div>
-
-              <Link
-                href={getCheckoutHref(plan)}
-                className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                <CreditCard size={16} aria-hidden="true" />
-                Choose plan
-                <ArrowRight size={16} aria-hidden="true" />
-              </Link>
-            </article>
+            <PlanCard key={plan.id} plan={plan} popular={index === 1} />
           ))}
         </div>
       ) : (

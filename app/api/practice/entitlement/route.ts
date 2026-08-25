@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sendFreePracticeEmail } from "@/lib/server/email";
+import { sendFreePracticeEmail, sendPracticeReviewRequestEmail } from "@/lib/server/email";
 import {
   getPracticeEntitlementState,
   PracticeEntitlementError,
@@ -23,7 +23,12 @@ export async function GET() {
   return noStore(NextResponse.json({ ok: true, entitlement: state }));
 }
 
-export async function POST() {
+function readText(value: unknown, maxLength: number) {
+  if (typeof value !== "string") return "";
+  return value.trim().slice(0, maxLength);
+}
+
+export async function POST(request: Request) {
   try {
     const identityId = await getSessionIdentityId();
 
@@ -38,16 +43,23 @@ export async function POST() {
       );
     }
 
+    const body = await request.json().catch(() => ({}) as Record<string, unknown>);
+    const fullName = readText(body?.fullName, 120);
+    const phone = readText(body?.phone, 40);
+    const currentRole = readText(body?.currentRole, 120);
+    const message = readText(body?.message, 1000);
+
     const origin = await getRequestOrigin();
     const state = await requestFreePractice({ identityId, origin });
 
-    if (state.status === "PENDING_REVIEW" || state.status === "APPROVED") {
-      const { rows } = await query<{ email: string | null }>(
-        `select lower(coalesce(primary_email, email)) as email from public.identity_users where identity_id = $1::uuid limit 1`,
-        [identityId]
-      ).catch(() => ({ rows: [] as Array<{ email: string | null }> }));
+    const { rows } = await query<{ email: string | null }>(
+      `select lower(coalesce(primary_email, email)) as email from public.identity_users where identity_id = $1::uuid limit 1`,
+      [identityId]
+    ).catch(() => ({ rows: [] as Array<{ email: string | null }> }));
 
-      const email = rows[0]?.email;
+    const email = rows[0]?.email ?? null;
+
+    if (state.status === "PENDING_REVIEW" || state.status === "APPROVED") {
       if (email) {
         void sendFreePracticeEmail({
           to: email,
@@ -55,6 +67,16 @@ export async function POST() {
           requestId: state.requestId,
         });
       }
+
+      void sendPracticeReviewRequestEmail({
+        candidateEmail: email,
+        requestId: state.requestId,
+        status: state.status,
+        fullName,
+        phone,
+        currentRole,
+        message,
+      });
     }
 
     return applyDeviceCookie(
