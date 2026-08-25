@@ -99,8 +99,8 @@ export default function StartInterviewForm() {
 
   return (
     <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
-      <form className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm" onSubmit={(event) => event.preventDefault()}>
-        <div className="grid gap-5 md:grid-cols-2">
+      <form className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" onSubmit={(event) => event.preventDefault()}>
+        <div className="grid items-start gap-5 md:grid-cols-2">
           <TextField
             label="Role"
             value={state.role}
@@ -113,6 +113,10 @@ export default function StartInterviewForm() {
           <SelectField label="Language" value={state.language} values={setupOptions.languages} onChange={(language) => setState((current) => ({ ...current, language }))} />
           <SelectField label="Duration" value={state.duration} values={setupOptions.durations} onChange={(duration) => setState((current) => ({ ...current, duration }))} />
         </div>
+        <p className="mt-4 text-xs leading-5 text-slate-500">
+          Type any target role — VERIS uses your role, experience, and preferences above to shape the practice
+          interview.
+        </p>
 
         <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
           <input

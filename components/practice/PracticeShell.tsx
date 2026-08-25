@@ -19,6 +19,99 @@ function getInitials(name: string) {
     .join("");
 }
 
+function readStoredCollapsed() {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === "1";
+}
+
+function Nav({
+  pathname,
+  showLabels,
+  onNavigate,
+}: {
+  pathname: string;
+  showLabels: boolean;
+  onNavigate: () => void;
+}) {
+  return (
+    <nav className="grid gap-1">
+      {navItems.map((item) => {
+        const Icon = item.icon;
+        const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            title={showLabels ? undefined : item.label}
+            className={`group flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition ${
+              showLabels ? "" : "justify-center px-0"
+            } ${
+              active
+                ? "bg-blue-600/15 text-blue-300 ring-1 ring-inset ring-blue-500/30"
+                : "text-slate-400 hover:bg-white/5 hover:text-slate-100"
+            }`}
+          >
+            <span
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition ${
+                active ? "bg-blue-500/20 text-blue-300" : "text-slate-500 group-hover:text-slate-200"
+              }`}
+            >
+              <Icon size={17} aria-hidden="true" />
+            </span>
+            {showLabels ? <span className="truncate">{item.label}</span> : null}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function SidebarFooter({
+  showLabels,
+  candidateName,
+  initials,
+  loggingOut,
+  onLogout,
+}: {
+  showLabels: boolean;
+  candidateName: string;
+  initials: string;
+  loggingOut: boolean;
+  onLogout: () => void;
+}) {
+  return (
+    <div className="mt-6 border-t border-white/10 pt-4">
+      <div className={`flex items-center gap-3 rounded-xl bg-white/5 p-3 ${showLabels ? "" : "justify-center px-2"}`}>
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/20 text-sm font-semibold text-blue-300">
+          {initials}
+        </div>
+        {showLabels ? (
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-slate-100">{candidateName}</p>
+            <p className="truncate text-xs text-slate-500">Practice candidate</p>
+          </div>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        onClick={onLogout}
+        disabled={loggingOut}
+        title={showLabels ? undefined : "Log out"}
+        className={`mt-3 flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-slate-400 transition hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60 ${
+          showLabels ? "" : "justify-center px-0"
+        }`}
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500">
+          <LogOut size={17} aria-hidden="true" />
+        </span>
+        {showLabels ? <span>{loggingOut ? "Logging out…" : "Log out"}</span> : null}
+      </button>
+    </div>
+  );
+}
+
 export default function PracticeShell({
   children,
   candidateName = "Candidate",
@@ -30,7 +123,10 @@ export default function PracticeShell({
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  // Lazy-initialized from localStorage: this runs once on mount for a
+  // client-only preference, so the SSR/first-paint mismatch it can cause is
+  // limited to this one boolean and corrects itself before the user notices.
+  const [collapsed, setCollapsed] = useState(readStoredCollapsed);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,13 +137,6 @@ export default function PracticeShell({
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY);
-    if (stored === "1") {
-      setCollapsed(true);
-    }
   }, []);
 
   const toggleCollapsed = () => {
@@ -65,78 +154,7 @@ export default function PracticeShell({
   };
 
   const initials = getInitials(candidateName);
-
-  function Nav({ showLabels }: { showLabels: boolean }) {
-    return (
-      <nav className="grid gap-1">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              title={showLabels ? undefined : item.label}
-              className={`group flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition ${
-                showLabels ? "" : "justify-center px-0"
-              } ${
-                active
-                  ? "bg-blue-600/15 text-blue-300 ring-1 ring-inset ring-blue-500/30"
-                  : "text-slate-400 hover:bg-white/5 hover:text-slate-100"
-              }`}
-            >
-              <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition ${
-                  active ? "bg-blue-500/20 text-blue-300" : "text-slate-500 group-hover:text-slate-200"
-                }`}
-              >
-                <Icon size={17} aria-hidden="true" />
-              </span>
-              {showLabels ? <span className="truncate">{item.label}</span> : null}
-            </Link>
-          );
-        })}
-      </nav>
-    );
-  }
-
-  function SidebarFooter({ showLabels }: { showLabels: boolean }) {
-    return (
-      <div className="mt-6 border-t border-white/10 pt-4">
-        <div
-          className={`flex items-center gap-3 rounded-xl bg-white/5 p-3 ${showLabels ? "" : "justify-center px-2"}`}
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/20 text-sm font-semibold text-blue-300">
-            {initials}
-          </div>
-          {showLabels ? (
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-100">{candidateName}</p>
-              <p className="truncate text-xs text-slate-500">Practice candidate</p>
-            </div>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          disabled={loggingOut}
-          title={showLabels ? undefined : "Log out"}
-          className={`mt-3 flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-slate-400 transition hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60 ${
-            showLabels ? "" : "justify-center px-0"
-          }`}
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500">
-            <LogOut size={17} aria-hidden="true" />
-          </span>
-          {showLabels ? <span>{loggingOut ? "Logging out…" : "Log out"}</span> : null}
-        </button>
-      </div>
-    );
-  }
+  const closeMobileNav = () => setOpen(false);
 
   return (
     <div className="min-h-screen bg-[#f5f7fb] text-slate-950">
@@ -151,16 +169,15 @@ export default function PracticeShell({
             className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}
             aria-label="VerisNova home"
           >
-            {/* Square asset (500x500) - the width/height must match its ratio or
-                Next mis-sizes it; h-8 w-auto controls the rendered size. */}
             <Image
-              src="/verisnova_logo_on_white.png"
+              src="/verisnova_logo_light.png"
               alt="VerisNova"
-              width={64}
-              height={64}
-              className="h-8 w-auto shrink-0 rounded-md bg-white p-1"
+              width={80}
+              height={80}
+              priority
+              className={`shrink-0 rounded-lg object-contain ${collapsed ? "h-10 w-10" : "h-11 w-11"}`}
             />
-            {!collapsed ? <span className="text-sm font-semibold tracking-wide text-white">VerisNova</span> : null}
+            {!collapsed ? <span className="text-base font-semibold tracking-wide text-white">VerisNova</span> : null}
           </Link>
         </div>
 
@@ -169,9 +186,15 @@ export default function PracticeShell({
         ) : null}
 
         <div className="mt-8 flex-1">
-          <Nav showLabels={!collapsed} />
+          <Nav pathname={pathname} showLabels={!collapsed} onNavigate={closeMobileNav} />
         </div>
-        <SidebarFooter showLabels={!collapsed} />
+        <SidebarFooter
+          showLabels={!collapsed}
+          candidateName={candidateName}
+          initials={initials}
+          loggingOut={loggingOut}
+          onLogout={handleLogout}
+        />
 
         <button
           type="button"
@@ -189,13 +212,13 @@ export default function PracticeShell({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Image
-                  src="/verisnova_logo_on_white.png"
+                  src="/verisnova_logo_light.png"
                   alt="VerisNova"
-                  width={64}
-                  height={64}
-                  className="h-8 w-auto rounded-md bg-white p-1"
+                  width={80}
+                  height={80}
+                  className="h-11 w-11 shrink-0 rounded-lg object-contain"
                 />
-                <span className="text-sm font-semibold tracking-wide text-white">VerisNova</span>
+                <span className="text-base font-semibold tracking-wide text-white">VerisNova</span>
               </div>
               <button
                 type="button"
@@ -207,9 +230,15 @@ export default function PracticeShell({
               </button>
             </div>
             <div className="mt-8 flex-1">
-              <Nav showLabels />
+              <Nav pathname={pathname} showLabels onNavigate={closeMobileNav} />
             </div>
-            <SidebarFooter showLabels />
+            <SidebarFooter
+              showLabels
+              candidateName={candidateName}
+              initials={initials}
+              loggingOut={loggingOut}
+              onLogout={handleLogout}
+            />
           </div>
         </div>
       )}
@@ -289,9 +318,7 @@ export default function PracticeShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          {children}
-        </main>
+        <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>
   );
