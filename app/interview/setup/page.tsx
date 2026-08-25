@@ -8,7 +8,7 @@ export default function InterviewSetup() {
       <PageHeader
         eyebrow="Start mock interview"
         title="Design your practice session"
-        description="Choose the interview shape. Starting creates a practice candidate, job, interview, and invite token through the existing HireVeri database functions."
+        description="Choose the interview shape. Starting creates a practice candidate, job, interview, and invite token through the existing VerisNova database functions."
       />
 
       <StartInterviewForm />

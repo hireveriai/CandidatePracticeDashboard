@@ -102,7 +102,7 @@ export function getPracticeEmail(identityId: string, email?: string) {
     return normalized;
   }
 
-  return `practice+${identityId.replaceAll("-", "")}@hireveri.local`;
+  return `practice+${identityId.replaceAll("-", "")}@verisnova.local`;
 }
 
 export async function getSchemaSupport(): Promise<SchemaSupport> {

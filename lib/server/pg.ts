@@ -1,7 +1,7 @@
 import { Pool, type PoolConfig, type QueryResultRow } from "pg";
 
 const globalForPg = globalThis as unknown as {
-  hireveriCandidatePgPool?: Pool;
+  verisnovaCandidatePgPool?: Pool;
 };
 
 function env(name: string) {
@@ -62,11 +62,11 @@ function buildConnectionConfig(): PoolConfig {
 }
 
 export function getPgPool() {
-  if (!globalForPg.hireveriCandidatePgPool) {
-    globalForPg.hireveriCandidatePgPool = new Pool(buildConnectionConfig());
+  if (!globalForPg.verisnovaCandidatePgPool) {
+    globalForPg.verisnovaCandidatePgPool = new Pool(buildConnectionConfig());
   }
 
-  return globalForPg.hireveriCandidatePgPool;
+  return globalForPg.verisnovaCandidatePgPool;
 }
 
 export async function query<T extends QueryResultRow = QueryResultRow>(text: string, values: unknown[] = []) {

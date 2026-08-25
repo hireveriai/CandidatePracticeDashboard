@@ -1,13 +1,19 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  Award,
   BrainCircuit,
   BriefcaseBusiness,
   CalendarCheck2,
+  CheckCircle2,
+  ClipboardList,
   Sparkles,
+  Wallet,
 } from "lucide-react";
 import type { PracticeDashboardData } from "@/lib/server/practice-candidate";
 import type { PracticePricingData } from "@/lib/server/practice-pricing";
+import type { PracticeEntitlementState } from "@/lib/server/practice-entitlement";
+import FreePracticeCard from "@/components/practice/FreePracticeCard";
 import PageHeader from "@/components/practice/PageHeader";
 import PracticeShell from "@/components/practice/PracticeShell";
 import PracticePricing from "@/components/practice/PracticePricing";
@@ -39,9 +45,11 @@ function getDisplayName(fullName: string | null) {
 export default function PracticeDashboard({
   data,
   pricing,
+  entitlement,
 }: {
   data: PracticeDashboardData;
   pricing: PracticePricingData;
+  entitlement: PracticeEntitlementState;
 }) {
   const candidateName = getDisplayName(data.candidate?.fullName ?? null);
   const interviews = data.interviews;
@@ -56,18 +64,25 @@ export default function PracticeDashboard({
   const jobTitles = Array.from(
     new Set(interviews.map((item) => item.jobTitle).filter(Boolean))
   ) as string[];
+  const paidCredits = pricing.subscription?.remainingCredits ?? 0;
+  const freeCredits = entitlement.freeCreditsRemaining;
+  const canStartInterview = paidCredits > 0 || freeCredits > 0;
 
   return (
     <PracticeShell candidateName={candidateName}>
       <PageHeader
         eyebrow="Practice dashboard"
         title={`Welcome, ${candidateName}`}
-        description={`${organizationName} practice data from HireVeri interviews and candidate setup.`}
+        description={`${organizationName} practice data from VerisNova interviews and candidate setup.`}
       />
 
       <section className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
-        <div className="rounded-lg border border-blue-100 bg-white p-6 shadow-sm">
-          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+        <div className="relative overflow-hidden rounded-xl border border-blue-100 bg-white p-6 shadow-sm">
+          <div
+            className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-50 blur-2xl"
+            aria-hidden="true"
+          />
+          <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">
                 <Sparkles size={16} aria-hidden="true" />
@@ -84,22 +99,30 @@ export default function PracticeDashboard({
                   : "No practice interview has been created for this candidate yet."}
               </p>
             </div>
-            <Link
-              href="/interview/setup?mode=practice"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-            >
-              Start Interview
-              <ArrowRight size={17} aria-hidden="true" />
-            </Link>
+            {canStartInterview ? (
+              <Link
+                href="/interview/setup?mode=practice"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md"
+              >
+                Start Interview
+                <ArrowRight size={17} aria-hidden="true" />
+              </Link>
+            ) : (
+              <span className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-slate-100 px-4 text-sm font-semibold text-slate-500">
+                No practice credits yet
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-start gap-3">
-            <BrainCircuit className="mt-1 text-indigo-600" size={24} aria-hidden="true" />
-            <div>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+              <BrainCircuit size={20} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
               <h2 className="text-lg font-semibold text-slate-950">Candidate record</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
+              <p className="mt-2 truncate text-sm leading-6 text-slate-600">
                 {data.candidate?.email ?? "No candidate email found for this session."}
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -111,30 +134,58 @@ export default function PracticeDashboard({
       </section>
 
       <section className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total interviews" value={String(interviews.length)} detail="from organization data" />
-        <StatCard label="Completed interviews" value={String(completedCount)} detail="from interview status" />
-        <StatCard label="Practice roles" value={String(activeJobs)} detail="linked job positions" />
+        <StatCard
+          label="Total interviews"
+          value={String(interviews.length)}
+          detail="from organization data"
+          icon={ClipboardList}
+        />
+        <StatCard
+          label="Completed interviews"
+          value={String(completedCount)}
+          detail="from interview status"
+          icon={CheckCircle2}
+        />
+        <StatCard label="Practice roles" value={String(activeJobs)} detail="linked job positions" icon={Award} />
         <StatCard
           label="Practice credits"
-          value={String(pricing.subscription?.remainingCredits ?? 0)}
-          detail={pricing.subscription ? "paid subscription credits" : "no active plan"}
+          value={String(paidCredits + freeCredits)}
+          detail={
+            freeCredits > 0 && paidCredits > 0
+              ? "free + paid credits"
+              : freeCredits > 0
+                ? "free practice credit"
+                : paidCredits > 0
+                  ? "paid subscription credits"
+                  : "no credits yet"
+          }
+          icon={Wallet}
         />
       </section>
+
+      <FreePracticeCard entitlement={entitlement} hasPaidCredits={paidCredits > 0} />
 
       <PracticePricing pricing={pricing} />
 
       <section className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-4">
             <h2 className="text-lg font-semibold text-slate-950">Recent interviews</h2>
-            <Link href="/history" className="text-sm font-semibold text-blue-700 hover:text-blue-800">
+            <Link
+              href="/history"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:text-blue-800"
+            >
               View all
+              <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
           <div className="grid gap-3">
             {interviews.length ? (
               interviews.slice(0, 5).map((item) => (
-                <div key={item.interviewId} className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+                <div
+                  key={item.interviewId}
+                  className="rounded-lg border border-slate-100 bg-slate-50 p-4 transition hover:border-blue-100 hover:bg-blue-50/40"
+                >
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
                       <p className="font-semibold text-slate-950">{item.jobTitle ?? "Practice interview"}</p>
@@ -159,9 +210,11 @@ export default function PracticeDashboard({
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-950">
-            <BriefcaseBusiness size={19} aria-hidden="true" />
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <BriefcaseBusiness size={16} aria-hidden="true" />
+            </span>
             Organization roles
           </h2>
           <div className="mt-4 flex flex-wrap gap-2">

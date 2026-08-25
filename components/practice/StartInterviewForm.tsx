@@ -16,7 +16,7 @@ type FormState = {
   coding: boolean;
 };
 
-const identityStorageKey = "hireveri.practice.identityId";
+const identityStorageKey = "verisnova.practice.identityId";
 
 function getPracticeIdentityId() {
   const existing = window.localStorage.getItem(identityStorageKey);

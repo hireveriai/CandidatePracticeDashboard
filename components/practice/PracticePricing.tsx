@@ -14,7 +14,7 @@ function getCheckoutHref(plan: PracticePlan) {
   const base =
     process.env.NEXT_PUBLIC_PRACTICE_CANDIDATE_CHECKOUT_URL ||
     process.env.NEXT_PUBLIC_LANDING_PRICING_URL ||
-    "https://hireveri.com/pricing";
+    "https://verisnova.com/pricing";
   const url = new URL(base);
   url.searchParams.set("plan", plan.slug);
   url.searchParams.set("audience", "practice-candidate");
@@ -33,7 +33,7 @@ export default function PracticePricing({ pricing }: { pricing: PracticePricingD
             VERIS practice interview plans
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            Plans are loaded from HireVeri billing records. Practice candidates use paid interview credits only; no trial credits are created.
+            Plans are loaded from VerisNova billing records. Practice candidates use paid interview credits only; no trial credits are created.
           </p>
         </div>
 

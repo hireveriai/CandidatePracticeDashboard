@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPracticeDashboard } from "@/lib/server/practice-candidate";
+import { getPracticeEntitlementState } from "@/lib/server/practice-entitlement";
 import { getPracticePricing } from "@/lib/server/practice-pricing";
 import { getSessionIdentityId } from "@/lib/server/session";
 
@@ -9,11 +10,12 @@ export async function GET(request: NextRequest) {
       request.nextUrl.searchParams.get("identityId") ??
       (await getSessionIdentityId()) ??
       undefined;
-    const [data, pricing] = await Promise.all([
+    const [data, pricing, entitlement] = await Promise.all([
       getPracticeDashboard(identityId),
       getPracticePricing(identityId),
+      getPracticeEntitlementState(identityId),
     ]);
-    return NextResponse.json({ ok: true, ...data, pricing });
+    return NextResponse.json({ ok: true, ...data, pricing, entitlement });
   } catch (error) {
     return NextResponse.json(
       {

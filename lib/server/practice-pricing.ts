@@ -1,3 +1,4 @@
+import type { CurrencyCode } from "./currency";
 import { query } from "./pg";
 
 export type PracticePlan = {
@@ -6,7 +7,7 @@ export type PracticePlan = {
   name: string;
   description: string;
   price: number;
-  currency: "INR" | "USD";
+  currency: CurrencyCode;
   interviewLimit: number;
   features: string[];
   order: number;
@@ -43,7 +44,7 @@ function mapPlan(row: {
   interviewLimit: number | string;
   features: unknown;
   order: number | string;
-  currency: "INR" | "USD";
+  currency: CurrencyCode;
 }): PracticePlan {
   return {
     id: row.id,
@@ -58,7 +59,7 @@ function mapPlan(row: {
   };
 }
 
-export async function getPracticePlans(currency: "INR" | "USD" = "INR") {
+export async function getPracticePlans(currency: CurrencyCode = "INR") {
   const { rows } = await query<{
     id: string;
     slug: string;
@@ -68,7 +69,7 @@ export async function getPracticePlans(currency: "INR" | "USD" = "INR") {
     interviewLimit: number | string;
     features: unknown;
     order: number | string;
-    currency: "INR" | "USD";
+    currency: CurrencyCode;
   }>(
     `
       select
@@ -76,7 +77,15 @@ export async function getPracticePlans(currency: "INR" | "USD" = "INR") {
         p."slug",
         p."name",
         p."description",
-        (case when $1 = 'USD' then p.price_usd else p.price_inr end)::int as "price",
+        coalesce(
+          case $1::text
+            when 'INR' then p.price_inr
+            when 'USD' then p.price_usd
+            when 'GBP' then p.price_gbp
+            when 'EUR' then p.price_eur
+          end,
+          p.price_usd
+        )::int as "price",
         $1::text as "currency",
         p."interviewLimit",
         p."features",
@@ -122,6 +131,9 @@ export async function getPracticeSubscription(identityId?: string | null) {
         on p."id" = s."planId"
       where s."userId" = $1::text
         and p."planType" = 'PRACTICE_CANDIDATE'
+        -- The free-practice entitlement is reported separately by
+        -- fn_get_candidate_practice_state; this reader is about paid plans.
+        and s."planId" <> 'practice-free-trial'
         and coalesce(s."status", 'active') in ('active', 'pending')
       order by
         case when coalesce(s."status", 'active') = 'active' then 0 else 1 end,
@@ -148,7 +160,7 @@ export async function getPracticeSubscription(identityId?: string | null) {
   };
 }
 
-export async function getPracticePricing(identityId?: string | null, currency: "INR" | "USD" = "INR"): Promise<PracticePricingData> {
+export async function getPracticePricing(identityId?: string | null, currency: CurrencyCode = "INR"): Promise<PracticePricingData> {
   try {
     const [plans, subscription] = await Promise.all([
       getPracticePlans(currency),
@@ -162,29 +174,49 @@ export async function getPracticePricing(identityId?: string | null, currency: "
   }
 }
 
+/**
+ * Spends exactly one practice credit.
+ *
+ * The free entitlement is spent before any paid credit. The row is selected
+ * with FOR UPDATE SKIP LOCKED and the decrement targets a single primary key,
+ * so two concurrent interview starts can never both spend the same credit and
+ * can never decrement two subscriptions at once.
+ */
 export async function consumePracticeInterviewCredit(identityId: string) {
   const { rows } = await query<{
     id: string;
     remainingCredits: number | string;
     usedCredits: number | string;
+    isFree: boolean;
   }>(
     `
+      with target as (
+        select s."id", s."planId"
+        from public.hireveri_user_subscriptions s
+        join public.hireveri_plans p on p."id" = s."planId"
+        where s."userId" = $1::text
+          and p."planType" = 'PRACTICE_CANDIDATE'
+          and coalesce(s."status", 'active') = 'active'
+          and (s."expiresAt" is null or s."expiresAt" > now())
+          and s."totalCredits" >= 1
+        order by case when s."planId" = 'practice-free-trial' then 0 else 1 end,
+                 s."updatedAt" asc
+        limit 1
+        for update of s skip locked
+      )
       update public.hireveri_user_subscriptions s
       set
         "totalCredits" = s."totalCredits" - 1,
         "usedCredits" = coalesce(s."usedCredits", 0) + 1,
         "updatedAt" = now()
-      from public.hireveri_plans p
-      where p."id" = s."planId"
-        and p."planType" = 'PRACTICE_CANDIDATE'
-        and s."userId" = $1::text
-        and coalesce(s."status", 'active') = 'active'
-        and (s."expiresAt" is null or s."expiresAt" > now())
+      from target t
+      where s."id" = t."id"
         and s."totalCredits" >= 1
       returning
         s."id",
         s."totalCredits" as "remainingCredits",
-        s."usedCredits" as "usedCredits"
+        s."usedCredits" as "usedCredits",
+        (t."planId" = 'practice-free-trial') as "isFree"
     `,
     [identityId]
   );
@@ -198,5 +230,6 @@ export async function consumePracticeInterviewCredit(identityId: string) {
     subscriptionId: row.id,
     remainingCredits: Number(row.remainingCredits ?? 0),
     usedCredits: Number(row.usedCredits ?? 0),
+    usedFreeCredit: Boolean(row.isFree),
   };
 }

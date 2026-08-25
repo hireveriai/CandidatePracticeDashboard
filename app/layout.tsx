@@ -3,7 +3,7 @@ import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "HireVeri Candidate",
+  title: "VerisNova Candidate",
   description: "Calm Interview Experience",
   robots: {
     index: false,
