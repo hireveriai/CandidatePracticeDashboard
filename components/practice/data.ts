@@ -9,6 +9,7 @@ import {
   Settings,
   Sparkles,
   Target,
+  Wand2,
 } from "lucide-react";
 
 export const navItems = [
@@ -18,6 +19,7 @@ export const navItems = [
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/skills", label: "Skill Progress", icon: Target },
   { href: "/resume-library", label: "Resume Library", icon: FileText },
+  { href: "/resume-enhancement", label: "Resume Enhancement", icon: Wand2 },
   { href: "/career-insights", label: "Career Insights", icon: BriefcaseBusiness },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

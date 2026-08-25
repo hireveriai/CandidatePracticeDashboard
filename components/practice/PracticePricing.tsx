@@ -38,10 +38,10 @@ function PlanCard({ plan, popular }: { plan: PracticePlan; popular: boolean }) {
         popular ? "border-blue-300 bg-blue-50 shadow-sm" : "border-slate-200 bg-white"
       }`}
     >
-      <div className="flex min-h-[184px] items-start justify-between gap-3">
+      <div className="flex h-[152px] items-start justify-between gap-3 overflow-hidden">
         <div>
           <p className="text-lg font-semibold text-slate-950">{plan.name}</p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{plan.description}</p>
+          <p className="mt-2 line-clamp-4 text-sm leading-6 text-slate-600">{plan.description}</p>
         </div>
         {popular ? (
           <span className="shrink-0 rounded-md bg-blue-600 px-2 py-1 text-xs font-semibold text-white">

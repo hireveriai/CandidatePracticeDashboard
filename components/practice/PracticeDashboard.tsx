@@ -3,8 +3,6 @@ import {
   ArrowRight,
   Award,
   BrainCircuit,
-  BriefcaseBusiness,
-  CalendarCheck2,
   CheckCircle2,
   ClipboardList,
   Sparkles,
@@ -61,9 +59,6 @@ export default function PracticeDashboard({
   ).size;
   const latestInterview = interviews[0] ?? null;
   const organizationName = data.candidate?.organizationName ?? "Your organization";
-  const jobTitles = Array.from(
-    new Set(interviews.map((item) => item.jobTitle).filter(Boolean))
-  ) as string[];
   const paidCredits = pricing.subscription?.remainingCredits ?? 0;
   const freeCredits = entitlement.freeCreditsRemaining;
   const canStartInterview = paidCredits > 0 || freeCredits > 0;
@@ -167,10 +162,13 @@ export default function PracticeDashboard({
 
       <PracticePricing pricing={pricing} />
 
-      <section className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold text-slate-950">Recent interviews</h2>
+      <section className="mt-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-950">Recent interviews</h2>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-slate-500">
+              Latest practice: {latestInterview ? formatDate(latestInterview.createdAt) : "No sessions yet"}
+            </span>
             <Link
               href="/history"
               className="inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:text-blue-800"
@@ -179,63 +177,35 @@ export default function PracticeDashboard({
               <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
-          <div className="grid gap-3">
-            {interviews.length ? (
-              interviews.slice(0, 5).map((item) => (
-                <div
-                  key={item.interviewId}
-                  className="rounded-lg border border-slate-100 bg-slate-50 p-4 transition hover:border-blue-100 hover:bg-blue-50/40"
-                >
-                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                    <div>
-                      <p className="font-semibold text-slate-950">{item.jobTitle ?? "Practice interview"}</p>
-                      <p className="mt-1 text-sm text-slate-500">
-                        {item.interviewType ?? "Interview"} - {formatDate(item.createdAt)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="rounded-md bg-white px-3 py-1 text-sm font-semibold text-slate-950">
-                        {item.durationMinutes ? `${item.durationMinutes} min` : "Flexible"}
-                      </span>
-                      <span className="text-sm text-slate-500">{item.status ?? "Pending"}</span>
-                    </div>
+        </div>
+        <div className="grid gap-3">
+          {interviews.length ? (
+            interviews.slice(0, 5).map((item) => (
+              <div
+                key={item.interviewId}
+                className="rounded-lg border border-slate-100 bg-slate-50 p-4 transition hover:border-blue-100 hover:bg-blue-50/40"
+              >
+                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                  <div>
+                    <p className="font-semibold text-slate-950">{item.jobTitle ?? "Practice interview"}</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {item.interviewType ?? "Interview"} - {formatDate(item.createdAt)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="rounded-md bg-white px-3 py-1 text-sm font-semibold text-slate-950">
+                      {item.durationMinutes ? `${item.durationMinutes} min` : "Flexible"}
+                    </span>
+                    <span className="text-sm text-slate-500">{item.status ?? "Pending"}</span>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-                No interviews found yet. Start a practice interview to create the first organization-backed record.
               </div>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-950">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              <BriefcaseBusiness size={16} aria-hidden="true" />
-            </span>
-            Organization roles
-          </h2>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {jobTitles.length ? (
-              jobTitles.map((role) => (
-                <span key={role} className="rounded-md bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">
-                  {role}
-                </span>
-              ))
-            ) : (
-              <p className="text-sm leading-6 text-slate-600">
-                Roles will appear here after the organization creates practice interviews for this candidate.
-              </p>
-            )}
-          </div>
-          <div className="mt-5 flex items-center gap-3 rounded-lg bg-indigo-50 p-4 text-sm text-indigo-900">
-            <CalendarCheck2 size={19} aria-hidden="true" />
-            <span>
-              Latest practice: {latestInterview ? formatDate(latestInterview.createdAt) : "No sessions yet"}
-            </span>
-          </div>
+            ))
+          ) : (
+            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
+              No interviews found yet. Start a practice interview to create the first organization-backed record.
+            </div>
+          )}
         </div>
       </section>
     </PracticeShell>
