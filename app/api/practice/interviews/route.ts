@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
         language: String(body.language ?? "English"),
         duration: String(body.duration ?? "30 minutes"),
         coding: Boolean(body.coding),
+        jobDescription: body.jobDescription ? String(body.jobDescription).slice(0, 8000) : undefined,
       });
 
       return NextResponse.json({

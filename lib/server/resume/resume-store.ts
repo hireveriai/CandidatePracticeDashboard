@@ -66,6 +66,33 @@ function mapResumeRow(row: CandidateResumeQueryRow): CandidateResumeRow {
   };
 }
 
+/**
+ * The raw text + structured data of whichever resume version the candidate
+ * has marked current. Used to feed Calm Room's existing resume-aware
+ * question-seeding trigger (which reads public.candidates.resume_text) --
+ * not used for anything within this app's own resume tables.
+ */
+export async function getCurrentResumeForCandidate(candidateId: string) {
+  const { rows } = await query<{ raw_text: string | null; structured_data: unknown }>(
+    `
+      select raw_text, structured_data
+      from public.candidate_resumes
+      where candidate_id = $1::uuid and is_current = true
+      order by created_at desc
+      limit 1
+    `,
+    [candidateId]
+  );
+
+  const row = rows[0];
+  if (!row) return null;
+
+  return {
+    rawText: row.raw_text,
+    structuredData: (row.structured_data as StructuredResume) ?? EMPTY_STRUCTURED_RESUME,
+  };
+}
+
 export async function listCandidateResumes(candidateId: string) {
   const { rows } = await query<CandidateResumeQueryRow>(
     `

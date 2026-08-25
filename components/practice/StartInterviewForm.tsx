@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Code2, Loader2, Mic, Video } from "lucide-react";
+import { ArrowRight, ClipboardPaste, Code2, Loader2, Mic, Sparkles, Video } from "lucide-react";
 import { useMemo, useState } from "react";
 import { setupOptions } from "@/components/practice/data";
 
@@ -14,7 +14,10 @@ type FormState = {
   language: string;
   duration: string;
   coding: boolean;
+  jobDescription: string;
 };
+
+const JOB_DESCRIPTION_MAX_LENGTH = 8000;
 
 const identityStorageKey = "verisnova.practice.identityId";
 
@@ -39,6 +42,7 @@ export default function StartInterviewForm() {
     language: setupOptions.languages[0],
     duration: setupOptions.durations[1],
     coding: false,
+    jobDescription: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +121,47 @@ export default function StartInterviewForm() {
           Type any target role — VERIS uses your role, experience, and preferences above to shape the practice
           interview.
         </p>
+
+        <div className="mt-6 rounded-lg border border-blue-100 bg-blue-50/60 p-4">
+          <label className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+            <ClipboardPaste size={17} className="text-blue-600" aria-hidden="true" />
+            Have a real job description? Paste it here
+            <span className="rounded-md bg-white px-2 py-0.5 text-xs font-semibold text-blue-700">Optional</span>
+          </label>
+          <p className="mt-1.5 text-xs leading-5 text-slate-600">
+            Preparing for an actual interview tomorrow? Paste the job posting and VERIS will tailor the questions
+            to the specific skills and responsibilities it asks for, instead of just your role title.
+          </p>
+          <textarea
+            value={state.jobDescription}
+            onChange={(event) =>
+              setState((current) => ({ ...current, jobDescription: event.target.value.slice(0, JOB_DESCRIPTION_MAX_LENGTH) }))
+            }
+            placeholder="Paste the job description or summary here..."
+            rows={5}
+            maxLength={JOB_DESCRIPTION_MAX_LENGTH}
+            className="mt-3 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          />
+          <div className="mt-1.5 flex items-center justify-between text-xs text-slate-500">
+            <span className="flex items-center gap-1">
+              {state.jobDescription.trim() ? (
+                <>
+                  <Sparkles size={12} className="text-blue-600" aria-hidden="true" />
+                  VERIS will tailor this interview to the pasted job description.
+                </>
+              ) : (
+                "Leave blank to practice generically for the role above."
+              )}
+            </span>
+            <span>
+              {state.jobDescription.length}/{JOB_DESCRIPTION_MAX_LENGTH}
+            </span>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            If you have a current resume saved in your Resume Library, VERIS combines it with this job description
+            to generate questions — the same way a recruiter-created interview is prepared.
+          </p>
+        </div>
 
         <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
           <input

@@ -1,4 +1,6 @@
 import { query } from "./pg";
+import { getCurrentResumeForCandidate } from "./resume/resume-store";
+import { flattenResumeToText } from "./resume/types";
 
 export type PracticeInterviewInput = {
   identityId: string;
@@ -11,6 +13,7 @@ export type PracticeInterviewInput = {
   language: string;
   duration: string;
   coding: boolean;
+  jobDescription?: string;
 };
 
 type SchemaSupport = {
@@ -306,6 +309,85 @@ function getCoreSkills(role: string, interviewType: string) {
   return [...base, "product thinking", "prioritization"];
 }
 
+type JobDescriptionOutputText = {
+  output_text?: string;
+  output?: Array<{ content?: Array<{ type?: string; text?: string }> }>;
+};
+
+function extractResponseText(response: JobDescriptionOutputText) {
+  if (typeof response.output_text === "string" && response.output_text.trim()) {
+    return response.output_text.trim();
+  }
+  return (response.output ?? [])
+    .flatMap((item) => item.content ?? [])
+    .filter((item) => item.type === "output_text" || item.type === "text")
+    .map((item) => item.text ?? "")
+    .join("")
+    .trim();
+}
+
+/**
+ * Pulls the concrete skills/keywords out of a candidate-pasted job
+ * description so the generated practice interview targets what this specific
+ * role actually asks for, instead of only the generic role-name heuristic in
+ * getCoreSkills. Best-effort: any failure here just falls back to that
+ * heuristic rather than blocking interview creation.
+ */
+async function extractSkillsFromJobDescription(jobDescription: string): Promise<string[] | null> {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  const trimmed = jobDescription.trim();
+  if (!apiKey || !trimmed) return null;
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: process.env.OPENAI_JD_MODEL?.trim() || "gpt-4o-mini",
+        input: [
+          {
+            role: "system",
+            content: [
+              {
+                type: "input_text",
+                text: "Extract the concrete skills, tools, and technologies this job description explicitly asks for. Only include things actually named in the text -- do not infer or add generic skills. Return at most 8, most important first.",
+              },
+            ],
+          },
+          { role: "user", content: [{ type: "input_text", text: trimmed.slice(0, 6000) }] },
+        ],
+        text: {
+          format: {
+            type: "json_schema",
+            name: "job_description_skills",
+            strict: true,
+            schema: {
+              type: "object",
+              additionalProperties: false,
+              properties: { skills: { type: "array", items: { type: "string" } } },
+              required: ["skills"],
+            },
+          },
+        },
+      }),
+    });
+
+    if (!response.ok) return null;
+
+    const payload = (await response.json()) as JobDescriptionOutputText;
+    const text = extractResponseText(payload);
+    if (!text) return null;
+
+    const parsed = JSON.parse(text) as { skills?: unknown };
+    if (!Array.isArray(parsed.skills)) return null;
+
+    return parsed.skills.filter((skill): skill is string => typeof skill === "string" && skill.trim().length > 0).slice(0, 8);
+  } catch (error) {
+    console.warn("Job description skill extraction failed", error);
+    return null;
+  }
+}
+
 async function ensurePracticeJob(input: PracticeInterviewInput, organizationId: string) {
   const support = await getSchemaSupport();
   if (!support.job_positions) {
@@ -315,15 +397,30 @@ async function ensurePracticeJob(input: PracticeInterviewInput, organizationId: 
   const duration = toDurationMinutes(input.duration);
   const difficultyProfile = toDifficultyProfile(input.difficulty);
   const codingRequired = input.coding ? "YES" : "NO";
-  const coreSkills = getCoreSkills(input.role, input.interviewType);
   const jobTitle = `Practice - ${input.role}`;
-  const jobDescription = [
-    `${input.interviewType} practice interview in ${input.language}.`,
-    `Difficulty: ${input.difficulty}.`,
-    `Experience: ${input.experience}.`,
-  ].join(" ");
+  const pastedJobDescription = input.jobDescription?.trim();
+
+  const jdSkills = pastedJobDescription ? await extractSkillsFromJobDescription(pastedJobDescription) : null;
+  const coreSkills = jdSkills?.length
+    ? Array.from(new Set([...jdSkills, ...getCoreSkills(input.role, input.interviewType)])).slice(0, 10)
+    : getCoreSkills(input.role, input.interviewType);
+
+  const jobDescription = pastedJobDescription
+    ? [
+        pastedJobDescription.slice(0, 4000),
+        "",
+        `Practice interview context: ${input.interviewType} format in ${input.language}, difficulty ${input.difficulty}, experience level ${input.experience}.`,
+      ].join("\n")
+    : [
+        `${input.interviewType} practice interview in ${input.language}.`,
+        `Difficulty: ${input.difficulty}.`,
+        `Experience: ${input.experience}.`,
+      ].join(" ");
   const experienceLevelId = await getExperienceLevelId(input.experience);
 
+  // Matching on job_description too (not just title+duration) so a candidate
+  // pasting a different JD for the same role/duration always gets its own
+  // tailored job row instead of silently reusing a stale one.
   const existing = await query<JobRow>(
     `
       select job_id::text
@@ -331,10 +428,11 @@ async function ensurePracticeJob(input: PracticeInterviewInput, organizationId: 
       where organization_id = $1::uuid
         and job_title = $2
         and interview_duration_minutes = $3
+        and job_description = $4
       order by job_id desc
       limit 1
     `,
-    [organizationId, jobTitle, duration]
+    [organizationId, jobTitle, duration, jobDescription]
   );
 
   if (existing.rows[0]?.job_id) {
@@ -407,9 +505,37 @@ async function ensurePracticeJob(input: PracticeInterviewInput, organizationId: 
   return jobId;
 }
 
+/**
+ * Copies the candidate's current resume (if any) onto public.candidates
+ * .resume_text before the interview row is created. Calm Room's own
+ * trg_prepare_interview_on_insert trigger reads that column the moment
+ * public.interviews gets an insert and auto-seeds candidate_resume_ai +
+ * resume-aware questions from it -- the exact same path a recruiter-created
+ * interview goes through. Nothing in Calm Room is touched; this only feeds
+ * its existing, already-live input.
+ */
+async function syncCandidateResumeForInterview(candidateId: string) {
+  try {
+    const resume = await getCurrentResumeForCandidate(candidateId);
+    if (!resume) return;
+
+    const resumeText = flattenResumeToText(resume.structuredData).trim();
+    if (!resumeText) return;
+
+    await query(
+      `update public.candidates set resume_text = $2, extracted_json = $3::jsonb, updated_at = now() where candidate_id = $1::uuid`,
+      [candidateId, resumeText, JSON.stringify(resume.structuredData)]
+    );
+  } catch (error) {
+    // Best-effort: a candidate can always practice generically even if this fails.
+    console.warn("Failed to sync candidate resume for interview seeding", error);
+  }
+}
+
 export async function createPracticeInterview(input: PracticeInterviewInput) {
   const support = await getSchemaSupport();
   const candidate = await ensurePracticeCandidate(input);
+  await syncCandidateResumeForInterview(candidate.candidateId);
   const jobId = await ensurePracticeJob(input, candidate.organizationId);
 
   if (!support.fn_create_interview_link) {
@@ -444,6 +570,15 @@ export async function createPracticeInterview(input: PracticeInterviewInput) {
   if (!interview?.interview_id || !interview.token || !interview.link) {
     throw new Error("INTERVIEW_LINK_CREATE_FAILED");
   }
+
+  // Same resume+JD-aware question seeding a recruiter-created interview
+  // gets: idempotent (no-ops if already seeded), reads exactly the
+  // job_positions.core_skills/job_description and candidates.resume_text
+  // this function just wrote. Best-effort -- a seeding failure should never
+  // block the candidate from getting their interview link.
+  await query(`select public.ensure_interview_prepared($1::uuid, false)`, [interview.interview_id]).catch((error) => {
+    console.warn("Practice interview question seeding failed", error);
+  });
 
   return {
     ...candidate,
