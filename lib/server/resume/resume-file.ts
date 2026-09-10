@@ -1,3 +1,5 @@
+import { openAiFetch } from "@/lib/server/ai-usage-log"
+
 type PdfTextContentItem = {
   str?: string
 }
@@ -217,7 +219,11 @@ async function extractTextWithVisionOcr(imageDataUrls: string[], sourceLabel: st
     return null
   }
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await openAiFetch("https://api.openai.com/v1/responses", {
+    aiUsage: {
+      operation: "practice.resume_ocr_images",
+      billing: { images: usableImages.length },
+    },
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -267,7 +273,8 @@ async function extractPdfTextWithOcr(resumeBuffer: Buffer) {
     throw new Error("PDF resume appears to be image-based and requires OPENAI_API_KEY for OCR")
   }
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await openAiFetch("https://api.openai.com/v1/responses", {
+    aiUsage: { operation: "practice.resume_ocr_pdf" },
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,

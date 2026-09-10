@@ -95,29 +95,28 @@ export async function sendFreePracticeEmail(params: PracticeNotification) {
   }
 }
 
+const DEFAULT_ADMIN_NOTIFICATION_EMAIL = "jatin.singh@verixans.com";
+
 function getAdminNotificationEmail() {
   return (
     process.env.PRACTICE_REVIEW_ADMIN_EMAIL?.trim() ||
     process.env.ADMIN_NOTIFICATION_EMAIL?.trim() ||
-    process.env.SMTP_USER?.trim() ||
-    null
+    DEFAULT_ADMIN_NOTIFICATION_EMAIL
   );
 }
 
 /**
  * Notifies the reviewer inbox whenever a candidate submits a free-practice
- * request, so approval happens off the SMTP creds already configured for
- * this app rather than depending on Resend being set up. Never throws —
- * a notification failure must not block the candidate's request.
+ * request. Sent through the same Resend account as sendFreePracticeEmail --
+ * this app has no SMTP credentials configured, only RESEND_API_KEY. Never
+ * throws -- a notification failure must not block the candidate's request.
  */
 export async function sendPracticeReviewRequestEmail(details: PracticeReviewRequestDetails) {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
   const adminEmail = getAdminNotificationEmail();
-  const smtpHost = process.env.SMTP_HOST?.trim();
-  const smtpUser = process.env.SMTP_USER?.trim();
-  const smtpPass = process.env.SMTP_PASS?.trim();
 
-  if (!adminEmail || !smtpHost || !smtpUser || !smtpPass) {
-    console.warn("Practice review notification skipped: SMTP is not fully configured");
+  if (!apiKey || !adminEmail) {
+    console.warn("Practice review notification skipped: Resend is not configured");
     return false;
   }
 
@@ -133,47 +132,51 @@ export async function sendPracticeReviewRequestEmail(details: PracticeReviewRequ
   const subject = `New free practice interview request${details.fullName ? ` — ${details.fullName}` : ""}`;
 
   try {
-    const { default: nodemailer } = await import("nodemailer");
-
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: Number(process.env.SMTP_PORT || 587) === 465,
-      auth: { user: smtpUser, pass: smtpPass },
+    const response = await fetch(RESEND_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        ...(details.requestId ? { "Idempotency-Key": `practice-review-${details.requestId}` } : {}),
+      },
+      body: JSON.stringify({
+        from: getEmailFrom(),
+        to: adminEmail,
+        subject,
+        text: [
+          ...rows.map(([label, value]) => `${label}: ${value}`),
+          "",
+          details.message ? `Message:\n${details.message}` : "No additional message.",
+        ].join("\n"),
+        html: `
+          <div style="font-family:Arial,Helvetica,sans-serif;color:#0f172a;max-width:560px">
+            <h2 style="margin:0 0 16px;font-size:20px">${escapeHtml(subject)}</h2>
+            <table style="border-collapse:collapse;font-size:14px;width:100%">
+              ${rows
+                .map(
+                  ([label, value]) => `
+                    <tr>
+                      <td style="padding:6px 12px 6px 0;color:#64748b;white-space:nowrap">${escapeHtml(label)}</td>
+                      <td style="padding:6px 0;color:#0f172a">${escapeHtml(value)}</td>
+                    </tr>
+                  `
+                )
+                .join("")}
+            </table>
+            ${
+              details.message
+                ? `<p style="margin:16px 0 0;font-size:14px;line-height:1.7;color:#334155;white-space:pre-wrap">${escapeHtml(details.message)}</p>`
+                : ""
+            }
+          </div>
+        `,
+      }),
     });
 
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM?.trim() || getEmailFrom(),
-      to: adminEmail,
-      subject,
-      text: [
-        ...rows.map(([label, value]) => `${label}: ${value}`),
-        "",
-        details.message ? `Message:\n${details.message}` : "No additional message.",
-      ].join("\n"),
-      html: `
-        <div style="font-family:Arial,Helvetica,sans-serif;color:#0f172a;max-width:560px">
-          <h2 style="margin:0 0 16px;font-size:20px">${escapeHtml(subject)}</h2>
-          <table style="border-collapse:collapse;font-size:14px;width:100%">
-            ${rows
-              .map(
-                ([label, value]) => `
-                  <tr>
-                    <td style="padding:6px 12px 6px 0;color:#64748b;white-space:nowrap">${escapeHtml(label)}</td>
-                    <td style="padding:6px 0;color:#0f172a">${escapeHtml(value)}</td>
-                  </tr>
-                `
-              )
-              .join("")}
-          </table>
-          ${
-            details.message
-              ? `<p style="margin:16px 0 0;font-size:14px;line-height:1.7;color:#334155;white-space:pre-wrap">${escapeHtml(details.message)}</p>`
-              : ""
-          }
-        </div>
-      `,
-    });
+    if (!response.ok) {
+      console.warn("Practice review notification email rejected", response.status, await response.text());
+      return false;
+    }
 
     return true;
   } catch (error) {

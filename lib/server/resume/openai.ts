@@ -1,3 +1,5 @@
+import { openAiFetch } from "@/lib/server/ai-usage-log";
+
 const OPENAI_MODEL = process.env.OPENAI_RESUME_MODEL?.trim() || "gpt-4o-mini";
 
 type OpenAIResponsesOutputText = {
@@ -58,7 +60,8 @@ export async function callOpenAIJson<T>(input: {
 
   let response: Response;
   try {
-    response = await fetch("https://api.openai.com/v1/responses", {
+    response = await openAiFetch("https://api.openai.com/v1/responses", {
+      aiUsage: { operation: "practice.resume_enhancement" },
       method: "POST",
       signal: controller.signal,
       headers: {

@@ -1,3 +1,4 @@
+import { openAiFetch } from "./ai-usage-log";
 import { query } from "./pg";
 import { getCurrentResumeForCandidate } from "./resume/resume-store";
 import { flattenResumeToText } from "./resume/types";
@@ -166,18 +167,24 @@ export async function ensurePracticeCandidate(input: {
     throw new Error("PRACTICE_CANDIDATE_SCHEMA_MISSING");
   }
 
+  // Each practice candidate gets their own dedicated organization rather
+  // than sharing one pool -- a shared org meant only one candidate
+  // platform-wide could ever hold an active subscription row (see
+  // hireveri_user_subscriptions' unique constraint on organizationId).
+  // Reuse an org only if this identity already has one from a prior visit.
   const org = await query<{ organization_id: string }>(
     `
       with existing as (
-        select organization_id
-        from public.organizations
-        where lower(organization_name) in ('practice arena', 'practice')
-        order by case when lower(organization_name) = 'practice arena' then 0 else 1 end
+        select c.organization_id
+        from public.candidate_identity_links cil
+        join public.candidates c on c.candidate_id = cil.candidate_id
+        where cil.identity_id = $1::uuid
+        order by cil.created_at desc
         limit 1
       ),
       inserted as (
         insert into public.organizations (organization_name, is_active)
-        select 'Practice Arena', true
+        select 'Practice - ' || $2, true
         where not exists (select 1 from existing)
         returning organization_id
       )
@@ -185,7 +192,8 @@ export async function ensurePracticeCandidate(input: {
       union all
       select organization_id::text from inserted
       limit 1
-    `
+    `,
+    [identityId, email]
   );
 
   const organizationId = org.rows[0]?.organization_id;
@@ -339,7 +347,8 @@ async function extractSkillsFromJobDescription(jobDescription: string): Promise<
   if (!apiKey || !trimmed) return null;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await openAiFetch("https://api.openai.com/v1/responses", {
+      aiUsage: { operation: "practice.job_description_parse" },
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
