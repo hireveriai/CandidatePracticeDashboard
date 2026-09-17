@@ -115,7 +115,7 @@ async function refundPracticeCredit(subscriptionId: string) {
   const { query } = await import("@/lib/server/pg");
   await query(
     `
-      update public.hireveri_user_subscriptions
+      update public.verisnova_user_subscriptions
       set "totalCredits" = "totalCredits" + 1,
           "usedCredits" = greatest(coalesce("usedCredits", 0) - 1, 0),
           "updatedAt" = now()

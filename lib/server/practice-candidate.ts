@@ -170,7 +170,7 @@ export async function ensurePracticeCandidate(input: {
   // Each practice candidate gets their own dedicated organization rather
   // than sharing one pool -- a shared org meant only one candidate
   // platform-wide could ever hold an active subscription row (see
-  // hireveri_user_subscriptions' unique constraint on organizationId).
+  // verisnova_user_subscriptions' unique constraint on organizationId).
   // Reuse an org only if this identity already has one from a prior visit.
   const org = await query<{ organization_id: string }>(
     `

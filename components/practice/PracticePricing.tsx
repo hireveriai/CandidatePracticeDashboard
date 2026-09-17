@@ -123,7 +123,7 @@ export default function PracticePricing({ pricing }: { pricing: PracticePricingD
         </div>
       ) : (
         <div className="mt-6 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-          No active practice candidate plans found in hireveri_plans.
+          No active practice candidate plans found in verisnova_plans.
         </div>
       )}
     </section>

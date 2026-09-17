@@ -214,8 +214,8 @@ export async function assertCanStartPracticeInterview(identityId: string) {
       select
         coalesce((
           select sum(greatest(s."totalCredits", 0))
-          from public.hireveri_user_subscriptions s
-          join public.hireveri_plans p on p."id" = s."planId"
+          from public.verisnova_user_subscriptions s
+          join public.verisnova_plans p on p."id" = s."planId"
           where s."userId" = $1::text
             and p."planType" = 'PRACTICE_CANDIDATE'
             and s."id" <> 'free-practice-' || $1::text
@@ -224,7 +224,7 @@ export async function assertCanStartPracticeInterview(identityId: string) {
         ), 0)::int as paid_credits,
         coalesce((
           select greatest(s."totalCredits", 0)
-          from public.hireveri_user_subscriptions s
+          from public.verisnova_user_subscriptions s
           where s."id" = 'free-practice-' || $1::text
             and coalesce(s."status", 'active') = 'active'
         ), 0)::int as free_credits

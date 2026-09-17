@@ -90,7 +90,7 @@ export async function getPracticePlans(currency: CurrencyCode = "INR") {
         p."interviewLimit",
         p."features",
         p."order"
-      from public.hireveri_plans p
+      from public.verisnova_plans p
       where p."isActive" = true
         and p."planType" = 'PRACTICE_CANDIDATE'
       order by p."order" asc
@@ -126,8 +126,8 @@ export async function getPracticeSubscription(identityId?: string | null) {
         greatest(coalesce(s."usedCredits", 0), 0) as "usedCredits",
         coalesce(s."status", 'active') as "status",
         s."expiresAt"::text as "expiresAt"
-      from public.hireveri_user_subscriptions s
-      join public.hireveri_plans p
+      from public.verisnova_user_subscriptions s
+      join public.verisnova_plans p
         on p."id" = s."planId"
       where s."userId" = $1::text
         and p."planType" = 'PRACTICE_CANDIDATE'
@@ -192,8 +192,8 @@ export async function consumePracticeInterviewCredit(identityId: string) {
     `
       with target as (
         select s."id", s."planId"
-        from public.hireveri_user_subscriptions s
-        join public.hireveri_plans p on p."id" = s."planId"
+        from public.verisnova_user_subscriptions s
+        join public.verisnova_plans p on p."id" = s."planId"
         where s."userId" = $1::text
           and p."planType" = 'PRACTICE_CANDIDATE'
           and coalesce(s."status", 'active') = 'active'
@@ -204,7 +204,7 @@ export async function consumePracticeInterviewCredit(identityId: string) {
         limit 1
         for update of s skip locked
       )
-      update public.hireveri_user_subscriptions s
+      update public.verisnova_user_subscriptions s
       set
         "totalCredits" = s."totalCredits" - 1,
         "usedCredits" = coalesce(s."usedCredits", 0) + 1,
