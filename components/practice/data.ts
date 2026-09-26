@@ -1,9 +1,7 @@
 import {
   BarChart3,
-  BookOpenCheck,
   BriefcaseBusiness,
   FileText,
-  Gauge,
   History,
   LayoutDashboard,
   Settings,
@@ -31,10 +29,3 @@ export const setupOptions = {
   languages: ["English", "Hindi", "Spanish", "French"],
   durations: ["15 minutes", "30 minutes", "45 minutes", "60 minutes"],
 };
-
-export const precheckItems = [
-  { label: "Camera", detail: "Face framing and lighting check", icon: Gauge },
-  { label: "Microphone", detail: "Voice clarity and noise level", icon: BookOpenCheck },
-  { label: "Network", detail: "Stable interview connection", icon: BarChart3 },
-  { label: "Environment", detail: "Quiet room and distraction scan", icon: Sparkles },
-];

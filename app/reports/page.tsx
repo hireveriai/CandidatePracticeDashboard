@@ -2,6 +2,7 @@ import { CheckCircle2, ClipboardList, FileBarChart, Layers } from "lucide-react"
 import PageHeader from "@/components/practice/PageHeader";
 import PracticeShell from "@/components/practice/PracticeShell";
 import StatCard from "@/components/practice/StatCard";
+import StatusPill, { formatLabel } from "@/components/practice/StatusPill";
 import { getPracticeDashboard } from "@/lib/server/practice-candidate";
 import { getSessionIdentityId } from "@/lib/server/session";
 
@@ -19,7 +20,7 @@ export default async function ReportsPage() {
 
   const typeBreakdown = Object.entries(
     interviews.reduce<Record<string, number>>((acc, item) => {
-      const key = item.interviewType?.trim() || "Unspecified";
+      const key = formatLabel(item.interviewType, "Other");
       acc[key] = (acc[key] ?? 0) + 1;
       return acc;
     }, {})
@@ -34,9 +35,9 @@ export default async function ReportsPage() {
       />
 
       <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total interviews" value={String(interviews.length)} detail="from organization data" icon={ClipboardList} />
-        <StatCard label="Completed" value={String(completed.length)} detail="from interview status" icon={CheckCircle2} />
-        <StatCard label="Roles practiced" value={String(activeJobs)} detail="linked job positions" icon={Layers} />
+        <StatCard label="Total interviews" value={String(interviews.length)} detail="practice sessions created" icon={ClipboardList} />
+        <StatCard label="Completed" value={String(completed.length)} detail="finished and evaluated" icon={CheckCircle2} />
+        <StatCard label="Roles practiced" value={String(activeJobs)} detail="different roles practiced" icon={Layers} />
         <StatCard
           label="Interview types"
           value={String(typeBreakdown.length)}
@@ -51,11 +52,12 @@ export default async function ReportsPage() {
           {completed.length ? (
             <div className="mt-5 grid gap-3">
               {completed.map((item) => (
-                <div key={item.interviewId} className="rounded-lg bg-slate-50 p-4 text-sm leading-6 text-slate-700">
-                  <p className="font-semibold text-slate-950">{item.jobTitle ?? "Practice interview"}</p>
-                  <p className="mt-1 text-slate-600">
-                    {item.interviewType ?? "Interview"} · status: {item.status}
-                  </p>
+                <div key={item.interviewId} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-slate-950">{item.jobTitle ?? "Practice interview"}</p>
+                    <p className="mt-0.5 text-slate-600">{formatLabel(item.interviewType, "Interview")}</p>
+                  </div>
+                  <StatusPill status={item.status} />
                 </div>
               ))}
             </div>

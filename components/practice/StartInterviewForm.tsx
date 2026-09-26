@@ -117,13 +117,9 @@ export default function StartInterviewForm() {
           <SelectField label="Language" value={state.language} values={setupOptions.languages} onChange={(language) => setState((current) => ({ ...current, language }))} />
           <SelectField label="Duration" value={state.duration} values={setupOptions.durations} onChange={(duration) => setState((current) => ({ ...current, duration }))} />
         </div>
-        <p className="mt-4 text-xs leading-5 text-slate-500">
-          Type any target role — VERIS uses your role, experience, and preferences above to shape the practice
-          interview.
-        </p>
 
         <div className="mt-6 rounded-lg border border-blue-100 bg-blue-50/60 p-4">
-          <label className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+          <label className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-950">
             <ClipboardPaste size={17} className="text-blue-600" aria-hidden="true" />
             Have a real job description? Paste it here
             <span className="rounded-md bg-white px-2 py-0.5 text-xs font-semibold text-blue-700">Optional</span>
@@ -142,7 +138,7 @@ export default function StartInterviewForm() {
             maxLength={JOB_DESCRIPTION_MAX_LENGTH}
             className="mt-3 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
           />
-          <div className="mt-1.5 flex items-center justify-between text-xs text-slate-500">
+          <div className="mt-1.5 flex items-start justify-between gap-3 text-xs text-slate-500">
             <span className="flex items-center gap-1">
               {state.jobDescription.trim() ? (
                 <>
@@ -153,7 +149,7 @@ export default function StartInterviewForm() {
                 "Leave blank to practice generically for the role above."
               )}
             </span>
-            <span>
+            <span className="shrink-0 tabular-nums">
               {state.jobDescription.length}/{JOB_DESCRIPTION_MAX_LENGTH}
             </span>
           </div>
@@ -176,7 +172,7 @@ export default function StartInterviewForm() {
               Include coding round
             </span>
             <span className="mt-1 block text-sm leading-6 text-slate-600">
-              When enabled, the generated interview job requests the existing coding interview implementation.
+              Adds a hands-on coding exercise to the interview.
             </span>
           </span>
         </label>
@@ -206,14 +202,14 @@ export default function StartInterviewForm() {
         </div>
       </form>
 
-      <aside className="rounded-lg border border-blue-100 bg-blue-50 p-6">
+      <aside className="h-fit rounded-xl border border-blue-100 bg-blue-50 p-6">
         <h2 className="text-lg font-semibold text-slate-950">Launch sequence</h2>
         <div className="mt-5 grid gap-4">
           {sequence.map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.text} className="flex gap-3 rounded-lg bg-white p-4 text-sm font-medium text-slate-700">
-                <Icon className="text-blue-600" size={18} aria-hidden="true" />
+              <div key={item.text} className="flex items-center gap-3 rounded-lg bg-white p-4 text-sm font-medium text-slate-700">
+                <Icon className="shrink-0 text-blue-600" size={18} aria-hidden="true" />
                 <span>{item.text}</span>
               </div>
             );

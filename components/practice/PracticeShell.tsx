@@ -257,7 +257,7 @@ export default function PracticeShell({
               </button>
               <div>
                 <p className="text-sm font-semibold text-slate-950">Welcome back, {candidateName}</p>
-                <p className="text-xs text-slate-500">Your practice data is loaded from VerisNova records.</p>
+                <p className="text-xs text-slate-500">Practice with VERIS AI and track how you improve.</p>
               </div>
             </div>
 
@@ -281,7 +281,7 @@ export default function PracticeShell({
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
                     {initials}
                   </span>
-                  <span className="hidden sm:inline">Candidate</span>
+                  <span className="hidden max-w-[10rem] truncate sm:inline">{candidateName}</span>
                 </button>
 
                 {menuOpen && (

@@ -29,14 +29,14 @@ export default async function SettingsPage() {
       <PageHeader
         eyebrow="Settings"
         title="Your account"
-        description="Account details on file with VerisNova for this practice candidate. Preference controls (coaching tone, reminders, accessibility) aren't available yet."
+        description="The details on your VerisNova practice account."
       />
 
       <section className="grid gap-5 lg:grid-cols-2">
         {fields.map(([label, value]) => (
           <div key={label} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-slate-500">{label}</p>
-            <p className="mt-2 truncate text-xl font-semibold text-slate-950">{value}</p>
+            <p className="mt-2 truncate text-xl font-semibold text-slate-950" title={value}>{value}</p>
           </div>
         ))}
       </section>

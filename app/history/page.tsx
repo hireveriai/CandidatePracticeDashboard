@@ -1,6 +1,7 @@
 import { History as HistoryIcon } from "lucide-react";
 import PageHeader from "@/components/practice/PageHeader";
 import PracticeShell from "@/components/practice/PracticeShell";
+import StatusPill, { formatLabel } from "@/components/practice/StatusPill";
 import { getPracticeDashboard } from "@/lib/server/practice-candidate";
 import { getSessionIdentityId } from "@/lib/server/session";
 
@@ -23,13 +24,13 @@ export default async function HistoryPage() {
       <PageHeader
         eyebrow="Interview history"
         title="Review every practice session"
-        description="A candidate-focused record of mock interviews created for this account, pulled directly from VerisNova organization data."
+        description="Every mock interview you have started, newest first."
       />
 
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
         {interviews.length ? (
           <>
-            <div className="grid gap-3 border-b border-slate-200 px-5 py-4 text-sm font-semibold text-slate-500 md:grid-cols-[1fr_0.7fr_0.5fr_0.7fr]">
+            <div className="hidden gap-3 border-b border-slate-200 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 md:grid md:grid-cols-[1fr_0.7fr_0.5fr_0.7fr]">
               <span>Role</span>
               <span>Type</span>
               <span>Duration</span>
@@ -45,11 +46,13 @@ export default async function HistoryPage() {
                     <p className="font-semibold text-slate-950">{item.jobTitle ?? "Practice interview"}</p>
                     <p className="mt-1 text-sm text-slate-500">{formatDate(item.createdAt)}</p>
                   </div>
-                  <p className="text-sm text-slate-600">{item.interviewType ?? "Interview"}</p>
+                  <p className="text-sm text-slate-600">{formatLabel(item.interviewType, "Interview")}</p>
                   <p className="text-sm text-slate-600">
                     {item.durationMinutes ? `${item.durationMinutes} min` : "Flexible"}
                   </p>
-                  <p className="text-sm font-semibold text-blue-700">{item.status ?? "Pending"}</p>
+                  <div>
+                    <StatusPill status={item.status} />
+                  </div>
                 </div>
               ))}
             </div>

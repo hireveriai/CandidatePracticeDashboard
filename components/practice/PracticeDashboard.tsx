@@ -16,6 +16,7 @@ import PageHeader from "@/components/practice/PageHeader";
 import PracticeShell from "@/components/practice/PracticeShell";
 import PracticePricing from "@/components/practice/PracticePricing";
 import StatCard from "@/components/practice/StatCard";
+import StatusPill, { formatLabel } from "@/components/practice/StatusPill";
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -58,7 +59,6 @@ export default function PracticeDashboard({
     interviews.map((item) => item.jobId).filter(Boolean)
   ).size;
   const latestInterview = interviews[0] ?? null;
-  const organizationName = data.candidate?.organizationName ?? "Your organization";
   const paidCredits = pricing.subscription?.remainingCredits ?? 0;
   const freeCredits = entitlement.freeCreditsRemaining;
   const canStartInterview = paidCredits > 0 || freeCredits > 0;
@@ -68,7 +68,7 @@ export default function PracticeDashboard({
       <PageHeader
         eyebrow="Practice dashboard"
         title={`Welcome, ${candidateName}`}
-        description={`${organizationName} practice data from VerisNova interviews and candidate setup.`}
+        description="Your practice interviews, progress and credits in one place."
       />
 
       <section className="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
@@ -78,7 +78,7 @@ export default function PracticeDashboard({
             aria-hidden="true"
           />
           <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-            <div>
+            <div className="min-w-0">
               <div className="mb-4 inline-flex items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">
                 <Sparkles size={16} aria-hidden="true" />
                 Recommended next step
@@ -90,20 +90,20 @@ export default function PracticeDashboard({
               </h2>
               <p className="mt-2 max-w-2xl text-slate-600">
                 {latestInterview
-                  ? `Latest session status: ${latestInterview.status ?? "pending"}.`
-                  : "No practice interview has been created for this candidate yet."}
+                  ? `Your latest session is ${formatLabel(latestInterview.status, "Pending").toLowerCase()}.`
+                  : "Pick a role, choose the interview style, and VERIS will run a realistic mock interview with feedback."}
               </p>
             </div>
             {canStartInterview ? (
               <Link
                 href="/interview/setup?mode=practice"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md"
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md"
               >
                 Start Interview
                 <ArrowRight size={17} aria-hidden="true" />
               </Link>
             ) : (
-              <span className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-slate-100 px-4 text-sm font-semibold text-slate-500">
+              <span className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-slate-100 px-4 text-sm font-semibold text-slate-500">
                 No practice credits yet
               </span>
             )}
@@ -116,13 +116,17 @@ export default function PracticeDashboard({
               <BrainCircuit size={20} aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <h2 className="text-lg font-semibold text-slate-950">Candidate record</h2>
-              <p className="mt-2 truncate text-sm leading-6 text-slate-600">
-                {data.candidate?.email ?? "No candidate email found for this session."}
+              <h2 className="text-lg font-semibold text-slate-950">Your account</h2>
+              <p className="mt-2 truncate text-sm leading-6 text-slate-600" title={data.candidate?.email ?? undefined}>
+                {data.candidate?.email ?? "Email not available"}
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Organization: {organizationName}
-              </p>
+              {data.candidate?.organizationName ? (
+                <p className="mt-1 truncate text-sm leading-6 text-slate-600">{data.candidate.organizationName}</p>
+              ) : null}
+              <Link href="/settings" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:text-blue-800">
+                Account settings
+                <ArrowRight size={14} aria-hidden="true" />
+              </Link>
             </div>
           </div>
         </div>
@@ -132,16 +136,16 @@ export default function PracticeDashboard({
         <StatCard
           label="Total interviews"
           value={String(interviews.length)}
-          detail="from organization data"
+          detail="practice sessions created"
           icon={ClipboardList}
         />
         <StatCard
           label="Completed interviews"
           value={String(completedCount)}
-          detail="from interview status"
+          detail="finished and evaluated"
           icon={CheckCircle2}
         />
-        <StatCard label="Practice roles" value={String(activeJobs)} detail="linked job positions" icon={Award} />
+        <StatCard label="Practice roles" value={String(activeJobs)} detail="different roles practiced" icon={Award} />
         <StatCard
           label="Practice credits"
           value={String(paidCredits + freeCredits)}
@@ -189,21 +193,21 @@ export default function PracticeDashboard({
                   <div>
                     <p className="font-semibold text-slate-950">{item.jobTitle ?? "Practice interview"}</p>
                     <p className="mt-1 text-sm text-slate-500">
-                      {item.interviewType ?? "Interview"} - {formatDate(item.createdAt)}
+                      {formatLabel(item.interviewType, "Interview")} · {formatDate(item.createdAt)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="rounded-md bg-white px-3 py-1 text-sm font-semibold text-slate-950">
                       {item.durationMinutes ? `${item.durationMinutes} min` : "Flexible"}
                     </span>
-                    <span className="text-sm text-slate-500">{item.status ?? "Pending"}</span>
+                    <StatusPill status={item.status} />
                   </div>
                 </div>
               </div>
             ))
           ) : (
             <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-              No interviews found yet. Start a practice interview to create the first organization-backed record.
+              No practice interviews yet. Your sessions will appear here as soon as you start one.
             </div>
           )}
         </div>

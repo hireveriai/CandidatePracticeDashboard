@@ -99,7 +99,7 @@ export default function PracticePricing({ pricing }: { pricing: PracticePricingD
             VERIS practice interview plans
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            Plans are loaded from VerisNova billing records. Practice candidates use paid interview credits only; no trial credits are created.
+            Each plan includes a set of VERIS AI practice interviews with personalized feedback.
           </p>
         </div>
 
@@ -123,7 +123,7 @@ export default function PracticePricing({ pricing }: { pricing: PracticePricingD
         </div>
       ) : (
         <div className="mt-6 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-          No active practice candidate plans found in verisnova_plans.
+          Practice plans are not available right now. Please check back soon.
         </div>
       )}
     </section>

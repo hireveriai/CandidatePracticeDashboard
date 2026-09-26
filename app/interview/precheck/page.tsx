@@ -1,8 +1,10 @@
-import { CheckCircle2, Info } from "lucide-react";
+import { Info } from "lucide-react";
+import DeviceChecks from "@/components/practice/DeviceChecks";
 import PageHeader from "@/components/practice/PageHeader";
 import PracticeShell from "@/components/practice/PracticeShell";
 import PrecheckReadyAction from "@/components/practice/PrecheckReadyAction";
-import { precheckItems } from "@/components/practice/data";
+import { getPracticeDashboard } from "@/lib/server/practice-candidate";
+import { getSessionIdentityId } from "@/lib/server/session";
 
 export default async function InterviewPrecheck({
   searchParams,
@@ -14,36 +16,21 @@ export default async function InterviewPrecheck({
   }>;
 }) {
   const params = await searchParams;
+  const identityId = await getSessionIdentityId();
+  const dashboard = await getPracticeDashboard(identityId ?? undefined);
 
   return (
-    <PracticeShell>
+    <PracticeShell candidateName={dashboard.candidate?.fullName ?? undefined}>
       <PageHeader
         eyebrow="Interview readiness"
         title="Check your setup before Veris begins"
         description="Confirm your setup, understand what to expect, and begin when you are comfortable and ready."
       />
 
-      <section className="grid gap-5 lg:grid-cols-[1fr_380px]">
-        <div className="grid gap-4 md:grid-cols-2">
-          {precheckItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div key={item.label} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <Icon className="text-blue-600" size={24} aria-hidden="true" />
-                  <CheckCircle2 className="text-teal-600" size={21} aria-label="Passed" />
-                </div>
-                <h2 className="mt-5 text-lg font-semibold text-slate-950">{item.label}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{item.detail}</p>
-                <p className="mt-4 rounded-md bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-700">
-                  Ready
-                </p>
-              </div>
-            );
-          })}
-        </div>
+      <section className="grid items-start gap-5 lg:grid-cols-[1fr_380px]">
+        <DeviceChecks />
 
-        <aside className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <aside className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950">Instructions</h2>
           <div className="mt-4 grid gap-3 text-sm leading-6 text-slate-600">
             <p>Keep your face centered and use a quiet environment.</p>
@@ -56,11 +43,7 @@ export default async function InterviewPrecheck({
               Your session may use camera, microphone, recording, transcript, and session-event data to prepare interview feedback. AI provides decision support; a person remains responsible for any hiring decision.
             </span>
           </div>
-          <PrecheckReadyAction
-            link={params.link}
-            token={params.token}
-            interviewId={params.interviewId}
-          />
+          <PrecheckReadyAction link={params.link} />
         </aside>
       </section>
     </PracticeShell>

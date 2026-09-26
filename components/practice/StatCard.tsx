@@ -13,8 +13,10 @@ export default function StatCard({
 }) {
   return (
     <div className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-medium text-slate-500">{label}</p>
+      {/* Fixed-height label row: a label that wraps to two lines must not push
+          its value lower than the neighbouring cards. */}
+      <div className="flex h-9 items-center justify-between gap-3">
+        <p className="line-clamp-2 text-sm font-medium leading-tight text-slate-500">{label}</p>
         {Icon ? (
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition group-hover:bg-blue-100">
             <Icon size={17} aria-hidden="true" />

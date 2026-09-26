@@ -213,7 +213,8 @@ export default function FreePracticeCard({ entitlement, hasPaidCredits }: Props)
     return (
       <Shell tone="success" icon={<CheckCircle2 size={20} aria-hidden="true" />} title="Free Practice Interview Ready">
         <p className="mt-2 text-sm leading-6 text-slate-700">
-          You have {state.freeCreditsRemaining} free VERIS AI practice interview with personalized feedback.
+          You have {state.freeCreditsRemaining} free VERIS AI practice{" "}
+          {state.freeCreditsRemaining === 1 ? "interview" : "interviews"} with personalized feedback.
         </p>
         <Link
           href="/interview/setup?mode=practice"
