@@ -170,10 +170,10 @@ export default function PracticeShell({
             aria-label="VerisNova home"
           >
             <Image
-              src="/verisnova_logo_light.png"
+              src="/verisnova-logo-dark.png"
               alt="VerisNova"
-              width={80}
-              height={80}
+              width={512}
+              height={512}
               priority
               className={`shrink-0 rounded-lg object-contain ${collapsed ? "h-10 w-10" : "h-11 w-11"}`}
             />
@@ -212,10 +212,10 @@ export default function PracticeShell({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Image
-                  src="/verisnova_logo_light.png"
+                  src="/verisnova-logo-dark.png"
                   alt="VerisNova"
-                  width={80}
-                  height={80}
+                  width={512}
+                  height={512}
                   className="h-11 w-11 shrink-0 rounded-lg object-contain"
                 />
                 <span className="text-base font-semibold tracking-wide text-white">VerisNova</span>
